@@ -1,0 +1,14 @@
+# Extreme puzzles: only used in E6 and E8, to test the methods on puzzles built to be hard.
+# The easy/medium/hard bank puzzles are graded by how hard they are for a human, and
+# plain DFS and BFS solve all of them in milliseconds. These two are known for being
+# hard in other ways. Both were checked to have exactly one solution.
+#
+# extreme-01: Arto Inkala's puzzle, published in 2012 as the "world's hardest sudoku"
+#             (hard for human solving techniques).
+# extreme-02: the example of a puzzle "designed to work against" brute-force backtracking
+#             in Wikipedia's "Sudoku solving algorithms" article (row 1 is almost empty, and
+#             its answer starts 987654321, the last digits a 1-to-9 search tries).
+#
+# columns: id  puzzle (81 digits, row by row, 0 = empty)  rating (none)  name
+extreme-01 800000000003600000070090200050007000000045700000100030001000068008500010090000400 - inkala-2012
+extreme-02 000000000000003085001020000000507000004000100090000000500000073002010000000040009 - wikipedia-brute-force

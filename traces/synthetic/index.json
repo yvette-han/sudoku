@@ -1,0 +1,86 @@
+{
+ "format": "sudoku-trace-index-1",
+ "traces": [
+  {
+   "file": "sa_sample-wiki_seed100.json",
+   "method": "sa",
+   "level": "easy",
+   "puzzle": "sample-wiki",
+   "label": "SA-like (fake), box swap",
+   "seed": 100,
+   "synthetic": true
+  },
+  {
+   "file": "ga_sample-wiki_seed200.json",
+   "method": "ga",
+   "level": "easy",
+   "puzzle": "sample-wiki",
+   "label": "GA-like (fake), box crossover",
+   "seed": 200,
+   "synthetic": true
+  },
+  {
+   "file": "dfs_sample-wiki_seed300.json",
+   "method": "dfs",
+   "level": "easy",
+   "puzzle": "sample-wiki",
+   "label": "DFS-like (fake), row-major order",
+   "seed": 300,
+   "synthetic": true
+  },
+  {
+   "file": "sa_sample-euler01_seed101.json",
+   "method": "sa",
+   "level": "medium",
+   "puzzle": "sample-euler01",
+   "label": "SA-like (fake), box swap",
+   "seed": 101,
+   "synthetic": true
+  },
+  {
+   "file": "ga_sample-euler01_seed201.json",
+   "method": "ga",
+   "level": "medium",
+   "puzzle": "sample-euler01",
+   "label": "GA-like (fake), box crossover",
+   "seed": 201,
+   "synthetic": true
+  },
+  {
+   "file": "dfs_sample-euler01_seed301.json",
+   "method": "dfs",
+   "level": "medium",
+   "puzzle": "sample-euler01",
+   "label": "DFS-like (fake), row-major order",
+   "seed": 301,
+   "synthetic": true
+  },
+  {
+   "file": "sa_sample-inkala_seed102.json",
+   "method": "sa",
+   "level": "hard",
+   "puzzle": "sample-inkala",
+   "label": "SA-like (fake), box swap",
+   "seed": 102,
+   "synthetic": true
+  },
+  {
+   "file": "ga_sample-inkala_seed202.json",
+   "method": "ga",
+   "level": "hard",
+   "puzzle": "sample-inkala",
+   "label": "GA-like (fake), box crossover",
+   "seed": 202,
+   "synthetic": true
+  },
+  {
+   "file": "dfs_sample-inkala_seed302.json",
+   "method": "dfs",
+   "level": "hard",
+   "puzzle": "sample-inkala",
+   "label": "DFS-like (fake), row-major order",
+   "seed": 302,
+   "synthetic": true
+  }
+ ]
+}

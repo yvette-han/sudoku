@@ -1,0 +1,111 @@
+{
+ "E1": {
+  "note": "Two blocks. With box moves the boxes are always complete, so a box term would always be 0 (weighted = missing_rc there, not run twice). With one-cell changes the loss must count boxes, so missing_rc is not allowed.",
+  "configs": [
+   "missing_rc / box / swap",
+   "pairs / box / swap",
+   "pairs / random / change",
+   "weighted 1:1:1 / random / change",
+   "weighted 1:1:3 / random / change"
+  ],
+  "runs": 750,
+  "wall_seconds": 347,
+  "finished": "2026-11-04 18:41",
+  "commit": "826c61f"
+ },
+ "E2": {
+  "note": "A swap inside a box can't repair a random fill, so random init only appears with one-cell changes.",
+  "configs": [
+   "box / missing_rc / swap",
+   "propagate / missing_rc / swap",
+   "random / weighted / change",
+   "box / weighted / change",
+   "propagate / weighted / change"
+  ],
+  "runs": 750,
+  "wall_seconds": 248,
+  "finished": "2026-11-04 18:45",
+  "commit": "826c61f"
+ },
+ "E3": {
+  "note": "'chain' = steps per temperature; 'auto' T0 = std dev of 200 sample move deltas. The baseline's reheat stays on, so a reheat returns T to the T0 under test.",
+  "configs": [
+   "T0=auto alpha=0.9 chain=100",
+   "T0=auto alpha=0.99 chain=100",
+   "T0=auto alpha=0.999 chain=100",
+   "T0=0.3 alpha=0.9 chain=100",
+   "T0=0.3 alpha=0.99 chain=100",
+   "T0=0.3 alpha=0.999 chain=100",
+   "T0=3.0 alpha=0.9 chain=100",
+   "T0=3.0 alpha=0.99 chain=100",
+   "T0=3.0 alpha=0.999 chain=100",
+   "T0=auto alpha=0.99 chain=10",
+   "T0=auto alpha=0.99 chain=1000"
+  ],
+  "runs": 1650,
+  "wall_seconds": 723,
+  "finished": "2026-11-04 18:57",
+  "commit": "826c61f"
+ },
+ "E4": {
+  "note": "Same budget for all: 1,000,000 steps. 'Stuck' = no new best loss for that many steps. A restart starts again from a new random box fill; a reheat sets T back to T0 and keeps the grid. 'alpha fit' cools from T0 to T0/100 over exactly the budget. Random-restart hill climbing is SA with the temperature at 0 (only moves that are no worse, sideways included), restarting after 2,000 steps without a new best; it is the same control as in E8.",
+  "configs": [
+   "one run, alpha=0.99",
+   "one long run, alpha fit to budget",
+   "restart after 20k steps stuck",
+   "reheat after 20k steps stuck (baseline)",
+   "reheat after 5k steps stuck",
+   "random-restart hill climbing (T=0, restart after 2k steps stuck)"
+  ],
+  "runs": 900,
+  "wall_seconds": 400,
+  "finished": "2026-11-05 04:36",
+  "commit": "94819bb"
+ },
+ "E5": {
+  "note": "Best setup = the config with the highest solve rate over all levels in E1-E4 (ties: lower median steps): E2: propagate / missing_rc / swap, i.e. `missing_rc propagate swap T0=auto alpha=0.99 chain=100 reheat@20000`, budget 1,000,000 steps. For comparison, random-restart hill climbing (SA at temperature 0, restarting after 2,000 steps without a new best, as in E4) runs on the same puzzles and seeds with the same 1,000,000-step budget.",
+  "configs": [
+   "best SA setup",
+   "random-restart hill climbing"
+  ],
+  "runs": 1200,
+  "wall_seconds": 172,
+  "finished": "2026-11-05 05:24",
+  "commit": "ecc3117"
+ },
+ "E6": {
+  "note": "Every method gets 10 s of wall-clock time per run. SA and GA use several seeds; DFS and BFS are deterministic (one run). BFS stops when its frontier passes 2,000,000 states (~240 MB), standing in for running out of memory. Random-restart hill climbing is SA at temperature 0, restarting after 2,000 steps without a new best (the same control as in E4 and E8). 'extreme' = puzzles/extreme.txt (E6 and E8 only). A time budget makes the stopping point depend on machine speed, so a rerun with the same seed follows the same path but may stop a little earlier or later.",
+  "configs": [
+   "SA (best setup)",
+   "GA, box crossover",
+   "GA, band crossover",
+   "GA + local search (memetic, 2000 steps)",
+   "random-restart hill climbing",
+   "DFS, reading order",
+   "DFS, reading order + forward checking",
+   "DFS, MRV + forward checking",
+   "BFS, reading order"
+  ],
+  "runs": 608,
+  "wall_seconds": 586,
+  "finished": "2026-11-05 05:02",
+  "commit": "4d24099"
+ },
+ "E8": {
+  "note": "Every config gets 10 s per run, as in E6. 'LS steps' = SA moves of local search applied to every new grid, at temperature 0 (only moves that are no worse). 'No crossover': children are mutated copies of tournament winners, then local search, so selection and local search without crossover. 'Random-restart hill climbing': no population at all; the same temperature-0 moves on one grid, restarting from a new box fill after 2,000 steps without a new best.",
+  "configs": [
+   "GA, no local search",
+   "memetic: pop 100, 500 LS steps",
+   "memetic: pop 30, 500 LS steps",
+   "memetic: pop 100, 100 LS steps",
+   "memetic: pop 100, 2000 LS steps",
+   "memetic, band crossover",
+   "memetic, no crossover",
+   "random-restart hill climbing"
+  ],
+  "runs": 768,
+  "wall_seconds": 684,
+  "finished": "2026-11-05 02:15",
+  "commit": "6db7db0"
+ }
+}

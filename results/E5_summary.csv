@@ -1,0 +1,9 @@
+block,config,method,level,runs,solved,solve_rate,median_steps_solved,median_seconds_solved,mean_final_loss_unsolved,mean_best_loss_unsolved,mean_restarts,mean_reheats,peak_mb_max
+best,best SA setup,sa,easy,200,200,1.0,0.0,0.0012,,,0,0,
+best,best SA setup,sa,all,600,600,1.0,0.0,0.0044,,,0,0.81,
+best,best SA setup,sa,medium,200,200,1.0,0.0,0.0039,,,0,0.38,
+best,best SA setup,sa,hard,200,200,1.0,17795.5,0.098,,,0,2.06,
+no temperature,random-restart hill climbing,sa,easy,200,193,0.965,31100.0,0.1525,12.43,2.0,31.14,0,
+no temperature,random-restart hill climbing,sa,all,600,566,0.943,77219.0,0.3874,8.09,2.0,56.16,0,
+no temperature,random-restart hill climbing,sa,medium,200,186,0.93,110329.5,0.5234,8.71,2.0,68.31,0,
+no temperature,random-restart hill climbing,sa,hard,200,187,0.935,126345.0,0.5781,5.08,2.0,69.03,0,

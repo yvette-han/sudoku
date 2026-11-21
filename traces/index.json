@@ -1,0 +1,229 @@
+{
+ "format": "sudoku-trace-index-1",
+ "traces": [
+  {
+   "file": "sa_baseline_easy-01_seed6.json",
+   "method": "sa",
+   "level": "easy",
+   "puzzle": "easy-01",
+   "label": "SA, baseline (reheat when stuck) (median of 9 seeds)",
+   "seed": 6
+  },
+  {
+   "file": "sa_noreheat_easy-01_seed2.json",
+   "method": "sa",
+   "level": "easy",
+   "puzzle": "easy-01",
+   "label": "SA, baseline without reheating (median of 9 seeds)",
+   "seed": 2
+  },
+  {
+   "file": "sa_best_easy-01_seed5.json",
+   "method": "sa",
+   "level": "easy",
+   "puzzle": "easy-01",
+   "label": "SA, best setup from E1-E4 (median of 9 seeds)",
+   "seed": 5
+  },
+  {
+   "file": "sa_hill_easy-01_seed3.json",
+   "method": "sa",
+   "level": "easy",
+   "puzzle": "easy-01",
+   "label": "SA, random-restart hill climbing (median of 9 seeds)",
+   "seed": 3
+  },
+  {
+   "file": "ga_easy-01_seed1.json",
+   "method": "ga",
+   "level": "easy",
+   "puzzle": "easy-01",
+   "label": "GA, box crossover",
+   "seed": 1
+  },
+  {
+   "file": "ga_memetic2000_easy-01_seed1.json",
+   "method": "ga",
+   "level": "easy",
+   "puzzle": "easy-01",
+   "label": "GA + local search (memetic, 2000 steps)",
+   "seed": 1
+  },
+  {
+   "file": "ga_memetic500_easy-01_seed1.json",
+   "method": "ga",
+   "level": "easy",
+   "puzzle": "easy-01",
+   "label": "GA + local search (memetic, 500 steps)",
+   "seed": 1
+  },
+  {
+   "file": "dfs_mrv_fc_easy-01.json",
+   "method": "dfs",
+   "level": "easy",
+   "puzzle": "easy-01",
+   "label": "DFS mrv + forward checking",
+   "seed": null
+  },
+  {
+   "file": "dfs_first_easy-01.json",
+   "method": "dfs",
+   "level": "easy",
+   "puzzle": "easy-01",
+   "label": "DFS first",
+   "seed": null
+  },
+  {
+   "file": "sa_baseline_medium-01_seed4.json",
+   "method": "sa",
+   "level": "medium",
+   "puzzle": "medium-01",
+   "label": "SA, baseline (reheat when stuck) (median of 9 seeds)",
+   "seed": 4
+  },
+  {
+   "file": "sa_noreheat_medium-01_seed4.json",
+   "method": "sa",
+   "level": "medium",
+   "puzzle": "medium-01",
+   "label": "SA, baseline without reheating (median of 9 seeds)",
+   "seed": 4
+  },
+  {
+   "file": "sa_best_medium-01_seed8.json",
+   "method": "sa",
+   "level": "medium",
+   "puzzle": "medium-01",
+   "label": "SA, best setup from E1-E4 (median of 9 seeds)",
+   "seed": 8
+  },
+  {
+   "file": "sa_hill_medium-01_seed3.json",
+   "method": "sa",
+   "level": "medium",
+   "puzzle": "medium-01",
+   "label": "SA, random-restart hill climbing (median of 9 seeds)",
+   "seed": 3
+  },
+  {
+   "file": "ga_medium-01_seed1.json",
+   "method": "ga",
+   "level": "medium",
+   "puzzle": "medium-01",
+   "label": "GA, box crossover",
+   "seed": 1
+  },
+  {
+   "file": "ga_memetic2000_medium-01_seed1.json",
+   "method": "ga",
+   "level": "medium",
+   "puzzle": "medium-01",
+   "label": "GA + local search (memetic, 2000 steps)",
+   "seed": 1
+  },
+  {
+   "file": "ga_memetic500_medium-01_seed1.json",
+   "method": "ga",
+   "level": "medium",
+   "puzzle": "medium-01",
+   "label": "GA + local search (memetic, 500 steps)",
+   "seed": 1
+  },
+  {
+   "file": "dfs_mrv_fc_medium-01.json",
+   "method": "dfs",
+   "level": "medium",
+   "puzzle": "medium-01",
+   "label": "DFS mrv + forward checking",
+   "seed": null
+  },
+  {
+   "file": "dfs_first_medium-01.json",
+   "method": "dfs",
+   "level": "medium",
+   "puzzle": "medium-01",
+   "label": "DFS first",
+   "seed": null
+  },
+  {
+   "file": "sa_baseline_hard-01_seed4.json",
+   "method": "sa",
+   "level": "hard",
+   "puzzle": "hard-01",
+   "label": "SA, baseline (reheat when stuck) (median of 9 seeds)",
+   "seed": 4
+  },
+  {
+   "file": "sa_noreheat_hard-01_seed5.json",
+   "method": "sa",
+   "level": "hard",
+   "puzzle": "hard-01",
+   "label": "SA, baseline without reheating (median of 9 seeds)",
+   "seed": 5
+  },
+  {
+   "file": "sa_best_hard-01_seed7.json",
+   "method": "sa",
+   "level": "hard",
+   "puzzle": "hard-01",
+   "label": "SA, best setup from E1-E4 (median of 9 seeds)",
+   "seed": 7
+  },
+  {
+   "file": "sa_hill_hard-01_seed7.json",
+   "method": "sa",
+   "level": "hard",
+   "puzzle": "hard-01",
+   "label": "SA, random-restart hill climbing (median of 9 seeds)",
+   "seed": 7
+  },
+  {
+   "file": "ga_hard-01_seed1.json",
+   "method": "ga",
+   "level": "hard",
+   "puzzle": "hard-01",
+   "label": "GA, box crossover",
+   "seed": 1
+  },
+  {
+   "file": "ga_memetic2000_hard-01_seed1.json",
+   "method": "ga",
+   "level": "hard",
+   "puzzle": "hard-01",
+   "label": "GA + local search (memetic, 2000 steps)",
+   "seed": 1
+  },
+  {
+   "file": "ga_memetic500_hard-01_seed1.json",
+   "method": "ga",
+   "level": "hard",
+   "puzzle": "hard-01",
+   "label": "GA + local search (memetic, 500 steps)",
+   "seed": 1
+  },
+  {
+   "file": "dfs_mrv_fc_hard-01.json",
+   "method": "dfs",
+   "level": "hard",
+   "puzzle": "hard-01",
+   "label": "DFS mrv + forward checking",
+   "seed": null
+  },
+  {
+   "file": "dfs_first_hard-01.json",
+   "method": "dfs",
+   "level": "hard",
+   "puzzle": "hard-01",
+   "label": "DFS first",
+   "seed": null
+  },
+  {
+   "file": "dfs_mrv_fc_extreme-01.json",
+   "method": "dfs",
+   "level": "extreme",
+   "puzzle": "extreme-01",
+   "label": "DFS mrv + forward checking",
+   "seed": null
+  }
+ ]
+}

@@ -1,0 +1,174 @@
+{
+ "note": "Loss and temperature curves: figures/E7_curves.png (puzzle <level>-01, seed 1: the baseline with and without reheating, and random-restart hill climbing in its own row). Demo traces: for each level's first puzzle, each SA setup (hill climbing included) is run with seeds 1..9 and the run with the median number of steps is saved (a typical run, not the luckiest). SA traces log every step up to 40,000 events, then only accepted moves.",
+ "traces": [
+  {
+   "file": "traces/sa_baseline_easy-01_seed6.json",
+   "label": "SA, baseline (reheat when stuck) (median of 9 seeds)",
+   "puzzle": "easy-01",
+   "outcome": "solved in 48,490 steps"
+  },
+  {
+   "file": "traces/sa_noreheat_easy-01_seed2.json",
+   "label": "SA, baseline without reheating (median of 9 seeds)",
+   "puzzle": "easy-01",
+   "outcome": "not solved in 1,000,000 steps (final loss 2)"
+  },
+  {
+   "file": "traces/sa_best_easy-01_seed5.json",
+   "label": "SA, best setup from E1-E4 (median of 9 seeds)",
+   "puzzle": "easy-01",
+   "outcome": "solved in 0 steps"
+  },
+  {
+   "file": "traces/sa_hill_easy-01_seed3.json",
+   "label": "SA, random-restart hill climbing (median of 9 seeds)",
+   "puzzle": "easy-01",
+   "outcome": "solved in 45,296 steps"
+  },
+  {
+   "file": "traces/ga_easy-01_seed1.json",
+   "label": "GA, box crossover",
+   "puzzle": "easy-01",
+   "outcome": "not solved after 2,206 generations (best loss 2)"
+  },
+  {
+   "file": "traces/ga_memetic2000_easy-01_seed1.json",
+   "label": "GA + local search (memetic, 2000 steps)",
+   "puzzle": "easy-01",
+   "outcome": "solved after 0 generations (best loss 0)"
+  },
+  {
+   "file": "traces/ga_memetic500_easy-01_seed1.json",
+   "label": "GA + local search (memetic, 500 steps)",
+   "puzzle": "easy-01",
+   "outcome": "solved after 1 generations (best loss 0)"
+  },
+  {
+   "file": "traces/dfs_mrv_fc_easy-01.json",
+   "label": "DFS mrv + forward checking",
+   "puzzle": "easy-01",
+   "outcome": "solved with 51 nodes, 0 backtracks"
+  },
+  {
+   "file": "traces/dfs_first_easy-01.json",
+   "label": "DFS first",
+   "puzzle": "easy-01",
+   "outcome": "solved with 5,573 nodes, 5,522 backtracks"
+  },
+  {
+   "file": "traces/sa_baseline_medium-01_seed4.json",
+   "label": "SA, baseline (reheat when stuck) (median of 9 seeds)",
+   "puzzle": "medium-01",
+   "outcome": "solved in 22,178 steps"
+  },
+  {
+   "file": "traces/sa_noreheat_medium-01_seed4.json",
+   "label": "SA, baseline without reheating (median of 9 seeds)",
+   "puzzle": "medium-01",
+   "outcome": "solved in 22,178 steps"
+  },
+  {
+   "file": "traces/sa_best_medium-01_seed8.json",
+   "label": "SA, best setup from E1-E4 (median of 9 seeds)",
+   "puzzle": "medium-01",
+   "outcome": "solved in 7,011 steps"
+  },
+  {
+   "file": "traces/sa_hill_medium-01_seed3.json",
+   "label": "SA, random-restart hill climbing (median of 9 seeds)",
+   "puzzle": "medium-01",
+   "outcome": "solved in 18,646 steps"
+  },
+  {
+   "file": "traces/ga_medium-01_seed1.json",
+   "label": "GA, box crossover",
+   "puzzle": "medium-01",
+   "outcome": "not solved after 2,297 generations (best loss 2)"
+  },
+  {
+   "file": "traces/ga_memetic2000_medium-01_seed1.json",
+   "label": "GA + local search (memetic, 2000 steps)",
+   "puzzle": "medium-01",
+   "outcome": "solved after 0 generations (best loss 0)"
+  },
+  {
+   "file": "traces/ga_memetic500_medium-01_seed1.json",
+   "label": "GA + local search (memetic, 500 steps)",
+   "puzzle": "medium-01",
+   "outcome": "solved after 1 generations (best loss 0)"
+  },
+  {
+   "file": "traces/dfs_mrv_fc_medium-01.json",
+   "label": "DFS mrv + forward checking",
+   "puzzle": "medium-01",
+   "outcome": "solved with 52 nodes, 0 backtracks"
+  },
+  {
+   "file": "traces/dfs_first_medium-01.json",
+   "label": "DFS first",
+   "puzzle": "medium-01",
+   "outcome": "solved with 1,901 nodes, 1,849 backtracks"
+  },
+  {
+   "file": "traces/sa_baseline_hard-01_seed4.json",
+   "label": "SA, baseline (reheat when stuck) (median of 9 seeds)",
+   "puzzle": "hard-01",
+   "outcome": "solved in 181,878 steps"
+  },
+  {
+   "file": "traces/sa_noreheat_hard-01_seed5.json",
+   "label": "SA, baseline without reheating (median of 9 seeds)",
+   "puzzle": "hard-01",
+   "outcome": "not solved in 1,000,000 steps (final loss 2)"
+  },
+  {
+   "file": "traces/sa_best_hard-01_seed7.json",
+   "label": "SA, best setup from E1-E4 (median of 9 seeds)",
+   "puzzle": "hard-01",
+   "outcome": "solved in 15,309 steps"
+  },
+  {
+   "file": "traces/sa_hill_hard-01_seed7.json",
+   "label": "SA, random-restart hill climbing (median of 9 seeds)",
+   "puzzle": "hard-01",
+   "outcome": "solved in 131,053 steps"
+  },
+  {
+   "file": "traces/ga_hard-01_seed1.json",
+   "label": "GA, box crossover",
+   "puzzle": "hard-01",
+   "outcome": "not solved after 2,228 generations (best loss 4)"
+  },
+  {
+   "file": "traces/ga_memetic2000_hard-01_seed1.json",
+   "label": "GA + local search (memetic, 2000 steps)",
+   "puzzle": "hard-01",
+   "outcome": "solved after 0 generations (best loss 0)"
+  },
+  {
+   "file": "traces/ga_memetic500_hard-01_seed1.json",
+   "label": "GA + local search (memetic, 500 steps)",
+   "puzzle": "hard-01",
+   "outcome": "solved after 2 generations (best loss 0)"
+  },
+  {
+   "file": "traces/dfs_mrv_fc_hard-01.json",
+   "label": "DFS mrv + forward checking",
+   "puzzle": "hard-01",
+   "outcome": "solved with 169 nodes, 115 backtracks"
+  },
+  {
+   "file": "traces/dfs_first_hard-01.json",
+   "label": "DFS first",
+   "puzzle": "hard-01",
+   "outcome": "solved with 2,832 nodes, 2,778 backtracks"
+  },
+  {
+   "file": "traces/dfs_mrv_fc_extreme-01.json",
+   "label": "DFS mrv + forward checking",
+   "puzzle": "extreme-01",
+   "outcome": "solved with 10,101 nodes, 10,041 backtracks"
+  }
+ ],
+ "commit": "0d15ed0"
+}

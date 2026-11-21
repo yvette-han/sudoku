@@ -1,0 +1,1559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sudoku Solver Viewer</title>
+<meta name="description" content="Replays recorded Sudoku solver runs (simulated annealing, genetic algorithm, backtracking DFS) with the grid beside the loss and temperature curves.">
+<!--
+  Sudoku solver viewer.
+  This page only REPLAYS traces written by the Python solvers; it does not solve
+  anything itself, so every number it shows comes from the Python runs.
+  Trace format: traces/README.md
+-->
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f1f0ec;
+  --text: #0b0b0b;
+  --text-2: #52514e;
+  --muted: #6b6a65;
+  --axis-label: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --border-strong: rgba(11, 11, 11, 0.22);
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --accent: #2a78d6;
+  --accent-ink: #1c5cab;
+  --on-accent: #ffffff;
+  --good-ink: #006300;
+  --good-bg: #e3f3e3;
+  --warning-ink: #7a4f00;
+  --warning-bg: #fdf1d6;
+  --critical: #d03b3b;
+  --critical-ink: #b42828;
+  --critical-bg: #fbe4e2;
+  --cell-bg: #ffffff;
+  --given-bg: #ecebe6;
+  --conflict-bg: #f9d9d6;
+  --sudoku-thick: #45443f;
+  --sudoku-thin: #d3d2cb;
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #242422;
+    --text: #f0efec;
+    --text-2: #c3c2b7;
+    --muted: #a3a29b;
+    --axis-label: #898781;
+    --grid: #2c2c2a;
+    --axis: #45443f;
+    --border: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.24);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --accent: #3987e5;
+    --accent-ink: #8dbbf1;
+    --on-accent: #ffffff;
+    --good-ink: #4cc44c;
+    --good-bg: #16301a;
+    --warning-ink: #fab219;
+    --warning-bg: #33280f;
+    --critical: #e05555;
+    --critical-ink: #f08a8a;
+    --critical-bg: #3a1c1c;
+    --cell-bg: #1f1f1e;
+    --given-bg: #2d2d2b;
+    --conflict-bg: #4d2222;
+    --sudoku-thick: #9a9992;
+    --sudoku-thin: #3a3a37;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #242422;
+  --text: #f0efec;
+  --text-2: #c3c2b7;
+  --muted: #a3a29b;
+  --axis-label: #898781;
+  --grid: #2c2c2a;
+  --axis: #45443f;
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.24);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --accent: #3987e5;
+  --accent-ink: #8dbbf1;
+  --on-accent: #ffffff;
+  --good-ink: #4cc44c;
+  --good-bg: #16301a;
+  --warning-ink: #fab219;
+  --warning-bg: #33280f;
+  --critical: #e05555;
+  --critical-ink: #f08a8a;
+  --critical-bg: #3a1c1c;
+  --cell-bg: #1f1f1e;
+  --given-bg: #2d2d2b;
+  --conflict-bg: #4d2222;
+  --sudoku-thick: #9a9992;
+  --sudoku-thin: #3a3a37;
+  --shadow: none;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
+h1, h2, h3, p { margin: 0; }
+code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+button, select, input { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+/* ---------- header ---------- */
+.top { padding: 24px 0 12px; }
+.top h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; }
+.top p { color: var(--text-2); margin-top: 4px; max-width: 72ch; }
+
+/* ---------- control rows ---------- */
+.bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; box-shadow: var(--shadow);
+}
+.bar + .bar { margin-top: 8px; }
+.field { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.flabel { color: var(--muted); font-size: 12.5px; }
+.grow { flex: 1 1 auto; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--surface-2); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg button {
+  border: 0; background: transparent; padding: 5px 11px; border-radius: 6px; cursor: pointer;
+  color: var(--text-2); white-space: nowrap;
+}
+.seg button:hover:not(:disabled) { background: var(--border); color: var(--text); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 0 0 1px var(--border-strong); }
+.seg button:disabled { opacity: 0.4; cursor: default; }
+select {
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 7px;
+  padding: 5px 8px; max-width: 100%; min-width: 0;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+  border: 1px solid var(--border-strong); background: var(--surface); border-radius: 7px;
+  padding: 5px 11px; cursor: pointer; white-space: nowrap;
+}
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; min-width: 92px; }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.07); background: var(--accent); }
+.btn.icon { padding: 5px 8px; }
+.btn svg { width: 16px; height: 16px; fill: currentColor; flex: none; }
+.chk { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.transport .tbtns { display: flex; gap: 6px; }
+.speed { display: flex; align-items: center; gap: 8px; }
+.speed input { width: 130px; }
+.speed output, .scrub output { font-variant-numeric: tabular-nums; color: var(--text-2); white-space: nowrap; font-size: 13px; }
+.speed output { min-width: 66px; }
+.scrub { display: flex; align-items: center; gap: 10px; flex: 1 1 260px; min-width: 0; }
+.scrub input { flex: 1; min-width: 0; }
+input[type="range"] { accent-color: var(--accent); }
+
+/* ---------- notices ---------- */
+.notice {
+  margin-top: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-2);
+}
+.notice.warn { background: var(--warning-bg); color: var(--text); border-color: transparent; }
+.notice.error { background: var(--critical-bg); color: var(--text); border-color: transparent; }
+.notice p + p, .notice ul { margin-top: 6px; }
+.notice ul { padding-left: 20px; margin-bottom: 0; }
+
+/* ---------- panels ---------- */
+.panels { display: grid; gap: 14px; margin: 14px 0 8px; }
+.panels.multi { grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); align-items: start; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); min-width: 0; overflow: hidden;
+}
+.panel-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+}
+.chip {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 6px;
+  background: var(--surface-2); color: var(--text-2);
+}
+.ph-text { flex: 1 1 160px; min-width: 0; }
+.ph-text h2 { font-size: 15.5px; font-weight: 650; }
+.ph-text p { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.status.neutral { background: var(--surface-2); color: var(--text-2); }
+.status.good { background: var(--good-bg); color: var(--good-ink); }
+.status.critical { background: var(--critical-bg); color: var(--critical-ink); }
+.status.warning { background: var(--warning-bg); color: var(--warning-ink); }
+
+.banner { padding: 8px 14px; font-size: 13px; background: var(--warning-bg); color: var(--text); border-bottom: 1px solid var(--border); }
+.banner strong { color: var(--warning-ink); }
+.warnings { padding: 8px 14px; font-size: 13px; background: var(--warning-bg); border-bottom: 1px solid var(--border); }
+.warnings ul { margin: 4px 0 0; padding-left: 18px; }
+
+.panel-body { display: grid; gap: 16px 22px; padding: 14px; }
+.panels.single .panel-body { grid-template-columns: minmax(260px, 400px) minmax(0, 1fr); }
+@media (max-width: 760px) { .panels.single .panel-body { grid-template-columns: minmax(0, 1fr); } }
+.loading { color: var(--muted); padding: 24px 0; }
+.msg.error { background: var(--critical-bg); padding: 10px 12px; border-radius: 8px; }
+
+/* ---------- sudoku grid ---------- */
+.grid-wrap { container-type: inline-size; width: 100%; max-width: 400px; margin: 0 auto; }
+.sudoku {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px;
+  background: var(--sudoku-thick); border-radius: 6px; aspect-ratio: 1;
+}
+.box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--sudoku-thin); }
+.cell {
+  display: flex; align-items: center; justify-content: center; background: var(--cell-bg);
+  font-size: 6.2cqi; font-variant-numeric: tabular-nums; color: var(--accent-ink); font-weight: 500;
+  aspect-ratio: 1; min-width: 0; line-height: 1; user-select: none;
+}
+.cell.given { background: var(--given-bg); color: var(--text); font-weight: 750; }
+.cell.conflict { background: var(--conflict-bg); color: var(--critical-ink); }
+.cell.given.conflict { color: var(--text); }
+.cell.changed { box-shadow: inset 0 0 0 2px var(--accent); }
+.cell.proposed { outline: 2px dashed var(--muted); outline-offset: -3px; }
+.cell.undone { box-shadow: inset 0 0 0 2px var(--critical); }
+
+.grid-legend { list-style: none; margin: 10px auto 0; padding: 0; max-width: 400px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--text-2); }
+.grid-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; flex: none; border: 1px solid var(--border-strong); }
+.sw.given { background: var(--given-bg); }
+.sw.solver { background: var(--cell-bg); position: relative; }
+.sw.solver::after { content: ""; position: absolute; inset: 3px; border-radius: 1px; background: var(--accent-ink); }
+.sw.conflict { background: var(--conflict-bg); border-color: var(--critical); }
+.sw.changed { background: var(--cell-bg); box-shadow: inset 0 0 0 2px var(--accent); border-color: transparent; }
+.sw.proposed { background: var(--cell-bg); outline: 2px dashed var(--muted); outline-offset: -3px; border-color: transparent; }
+.sw.undone { background: var(--cell-bg); box-shadow: inset 0 0 0 2px var(--critical); border-color: transparent; }
+.grid-legend .count { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
+
+/* ---------- stats ---------- */
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 8px; }
+.stat { background: var(--surface-2); border-radius: 8px; padding: 7px 10px; min-width: 0; }
+.stat .k { font-size: 12px; line-height: 1.3; color: var(--muted); }
+.stat .v { font-size: 17px; font-weight: 620; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- charts ---------- */
+.charts { display: grid; gap: 12px; margin-top: 14px; }
+.chart { margin: 0; min-width: 0; }
+.chart figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; font-size: 13px; margin-bottom: 2px; }
+.chart .ct { font-weight: 600; }
+.chart .cv { font-weight: 650; font-variant-numeric: tabular-nums; }
+.legend { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; color: var(--text-2); }
+.legend span.item { display: inline-flex; align-items: center; gap: 6px; }
+.lkey { display: inline-block; width: 14px; height: 2px; border-radius: 2px; flex: none; }
+.legend .val { color: var(--text); font-weight: 650; font-variant-numeric: tabular-nums; }
+.plot { position: relative; height: 168px; }
+.panels.multi .plot { height: 150px; }
+.plot canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
+.plot canvas:focus-visible { outline-offset: 0; border-radius: 4px; }
+.tip {
+  position: absolute; top: 6px; pointer-events: none; z-index: 2;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px;
+  padding: 6px 9px; font-size: 12.5px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12); white-space: nowrap;
+}
+.tip .th { color: var(--muted); margin-bottom: 2px; font-variant-numeric: tabular-nums; }
+.tip .row { display: flex; align-items: center; gap: 7px; }
+.tip .row strong { font-variant-numeric: tabular-nums; }
+.tip .row span.l { color: var(--text-2); }
+
+/* ---------- checks + settings ---------- */
+.check { margin-top: 14px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
+.check h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.check ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 13px; }
+.check li { display: flex; gap: 7px; }
+.check li .ic { font-weight: 700; width: 1em; flex: none; text-align: center; }
+.check li.good .ic { color: var(--good-ink); }
+.check li.critical .ic { color: var(--critical-ink); }
+.check li.warning .ic { color: var(--warning-ink); }
+details.settings { margin-top: 12px; font-size: 13px; }
+details.settings summary { cursor: pointer; color: var(--text-2); }
+details.settings dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 14px; margin: 8px 0 0; }
+details.settings dt { color: var(--muted); }
+details.settings dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.cmd { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
+.cmd code { flex: 1; min-width: 0; background: var(--surface-2); padding: 6px 8px; border-radius: 6px; overflow-wrap: anywhere; }
+
+.empty { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: 12px; padding: 28px 18px; text-align: center; color: var(--text-2); }
+.empty p + p { margin-top: 6px; }
+
+footer { color: var(--muted); font-size: 12.5px; padding: 8px 0 28px; }
+footer kbd { font: 11.5px ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; color: var(--text-2); }
+
+#drop {
+  position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--page) 82%, transparent); font-size: 18px; font-weight: 600;
+  border: 3px dashed var(--accent); pointer-events: none;
+}
+
+@media (max-width: 560px) {
+  .top { padding-top: 16px; }
+  .top h1 { font-size: 19px; }
+  .speed input { width: 100px; }
+  .panels.multi { grid-template-columns: minmax(0, 1fr); }
+  .panel-body { padding: 12px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Sudoku solver viewer</h1>
+    <p>Replays runs recorded by the Python solvers: simulated annealing, a genetic algorithm and backtracking DFS. The grid sits beside the loss (energy) curve, as in the lecture video.</p>
+  </header>
+
+  <section class="bar filters" aria-label="Choose a run">
+    <div class="field"><span class="flabel" id="levelLbl">Level</span><div class="seg" id="levelSeg" role="group" aria-labelledby="levelLbl"></div></div>
+    <label class="field"><span class="flabel">Puzzle</span><select id="puzzleSel"></select></label>
+    <div class="field"><span class="flabel" id="methodLbl">Method</span><div class="seg" id="methodSeg" role="group" aria-labelledby="methodLbl"></div></div>
+    <div class="grow"></div>
+    <label class="chk" title="Fake traces made by tools/make_sample_traces.py to test this page"><input type="checkbox" id="synthChk"> Synthetic test traces</label>
+    <button class="btn" id="openBtn" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h4.38l2 2H18.5A1.5 1.5 0 0 1 20 7.5V9H6.2a1.5 1.5 0 0 0-1.43 1.04L4 12.5zM5.33 11h15.31a1 1 0 0 1 .95 1.31l-2.1 6.5a1.5 1.5 0 0 1-1.43 1.04H4.36a1 1 0 0 1-.95-1.31l2.03-6.5A1.5 1.5 0 0 1 5.33 11z"/></svg>
+      Open trace files…
+    </button>
+    <input type="file" id="fileIn" multiple accept=".json,application/json" hidden>
+  </section>
+
+  <section class="bar transport" aria-label="Playback">
+    <div class="tbtns">
+      <button class="btn icon" id="resetBtn" type="button" title="Back to the start (Home)" aria-label="Back to the start"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h2v14H4zM13 5.5v13L6 12zM20 5.5v13L13 12z"/></svg></button>
+      <button class="btn icon" id="backBtn" type="button" title="Step back (←)" aria-label="Step back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h2v12H5zM18 6.2v11.6L9 12z"/></svg></button>
+      <button class="btn primary" id="playBtn" type="button" title="Play or pause (Space)"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="playIcon" d="M8 5.6v12.8a.8.8 0 0 0 1.22.68l10.1-6.4a.8.8 0 0 0 0-1.36L9.22 4.92A.8.8 0 0 0 8 5.6z"/></svg><span id="playTxt">Play</span></button>
+      <button class="btn icon" id="stepBtn" type="button" title="Step forward (→)" aria-label="Step forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 6h2v12h-2zM6 6.2v11.6L15 12z"/></svg></button>
+      <button class="btn icon" id="endBtn" type="button" title="Jump to the end (End)" aria-label="Jump to the end"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5h2v14h-2zM4 5.5v13l7-6.5zM11 5.5v13l7-6.5z"/></svg></button>
+    </div>
+    <label class="speed"><span class="flabel">Speed</span><input type="range" id="speed" min="0" max="18" step="1" value="6" aria-describedby="speedOut"><output id="speedOut" title="Trace events replayed per second"></output></label>
+    <div class="scrub"><input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Position in the run"><output id="pos">0 / 0</output></div>
+  </section>
+
+  <div id="notice" class="notice" hidden></div>
+  <main id="panels" class="panels single" aria-live="off"></main>
+
+  <footer>
+    Keys: <kbd>Space</kbd> play/pause · <kbd>→</kbd> step · <kbd>←</kbd> step back · <kbd>Home</kbd> start · <kbd>End</kbd> end. You can also drop trace files onto the page.
+    Trace format: <code>traces/README.md</code>. With <b>All</b>, every panel moves the same number of trace events per tick.
+    A step, a generation and a DFS node are different units.
+  </footer>
+</div>
+<div id="drop" hidden>Drop trace JSON files to view them</div>
+
+<script>
+'use strict';
+
+/* =====================================================================
+   Constants
+   ===================================================================== */
+const FORMAT = 'sudoku-trace-1';
+const CK = 256;                       // grid checkpoint every CK events (for seeking)
+const LEVEL_ORDER = ['easy', 'medium', 'hard'];
+const METHOD_ORDER = ['sa', 'ga', 'dfs'];
+const SPEEDS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000];
+
+const METHODS = {
+  sa: {
+    name: 'Simulated annealing', short: 'SA', unit: 'Step',
+    charts: [
+      { title: 'Loss', markers: true, series: [{ key: 'loss', label: 'Loss', color: 'series-1' }] },
+      { title: 'Temperature', markers: true, series: [{ key: 'T', label: 'T', color: 'series-2' }] },
+    ],
+  },
+  ga: {
+    name: 'Genetic algorithm', short: 'GA', unit: 'Generation',
+    charts: [
+      { title: 'Loss per generation', series: [
+        { key: 'loss', label: 'Best', color: 'series-1' },
+        { key: 'avg', label: 'Average', color: 'series-2' },
+      ] },
+    ],
+  },
+  dfs: {
+    name: 'Backtracking DFS', short: 'DFS', unit: 'Node',
+    charts: [
+      { title: 'Cells filled (search depth)', series: [{ key: 'depth', label: 'Filled', color: 'series-1' }] },
+    ],
+  },
+};
+const GENERIC = {
+  name: 'Solver', short: '?', unit: 'Step',
+  charts: [{ title: 'Loss', series: [{ key: 'loss', label: 'Loss', color: 'series-1' }] }],
+};
+
+/* The 27 units (9 rows, 9 columns, 9 boxes) as lists of cell indexes 0-80. */
+const UNITS = [];
+for (let r = 0; r < 9; r++) UNITS.push(Array.from({ length: 9 }, (_, c) => 9 * r + c));
+for (let c = 0; c < 9; c++) UNITS.push(Array.from({ length: 9 }, (_, r) => 9 * r + c));
+for (let b = 0; b < 9; b++) {
+  const br = 3 * Math.floor(b / 3), bc = 3 * (b % 3), u = [];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) u.push(9 * (br + i) + bc + j);
+  UNITS.push(u);
+}
+
+/* =====================================================================
+   Small helpers
+   ===================================================================== */
+const $ = (id) => document.getElementById(id);
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  if (props) for (const [k, v] of Object.entries(props)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue;
+    el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+const nf = new Intl.NumberFormat('en-US');
+const fmtInt = (v) => (Number.isFinite(v) ? nf.format(Math.round(v)) : '—');
+function fmtNum(v) {
+  if (!Number.isFinite(v)) return '—';
+  if (Number.isInteger(v)) return nf.format(v);
+  const a = Math.abs(v);
+  if (a !== 0 && (a < 0.001 || a >= 1e6)) return v.toExponential(2);
+  return String(+v.toPrecision(4));
+}
+function fmtTime(s) {
+  if (!Number.isFinite(s)) return '—';
+  if (s < 1) return `${+(s * 1000).toPrecision(3)} ms`;
+  if (s < 60) return `${s.toFixed(2)} s`;
+  return `${Math.floor(s / 60)} min ${Math.round(s % 60)} s`;
+}
+function fmtAxis(v) {
+  const a = Math.abs(v);
+  if (a >= 1e6) return `${+(v / 1e6).toPrecision(3)}M`;
+  if (a >= 1e4) return `${+(v / 1e3).toPrecision(3)}K`;
+  if (Number.isInteger(v)) return nf.format(v);
+  return String(+v.toPrecision(3));
+}
+const fmtSpeed = (v) => (v >= 1000 ? `${fmtAxis(v)} / s` : `${v} / s`);
+function niceStep(range, count) {
+  const raw = range / count, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+}
+function ticks(min, max, count) {
+  if (!(max > min)) return [min];
+  const st = niceStep(max - min, count), out = [];
+  for (let v = Math.ceil(min / st - 1e-9) * st; v <= max + st * 1e-9; v += st) out.push(+v.toPrecision(12));
+  return out;
+}
+function niceMax(max) {
+  if (!(max > 0)) return 1;
+  const st = niceStep(max, 4);
+  return Math.ceil(max / st - 1e-9) * st;
+}
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+/* Grid strings: 81 characters, digits 1-9, and 0 or . for an empty cell.
+   A 9x9 list of lists (as Python's json.dump writes it) is accepted too. */
+function parseGrid(s, what) {
+  if (Array.isArray(s)) s = s.flat().join('');
+  if (typeof s !== 'string') throw new Error(`${what} is missing or is not a string`);
+  s = s.replace(/\s+/g, '');
+  if (s.length !== 81) throw new Error(`${what} has ${s.length} characters, expected 81`);
+  const g = new Uint8Array(81);
+  for (let i = 0; i < 81; i++) {
+    const ch = s[i];
+    if (ch === '.' || ch === '0') g[i] = 0;
+    else if (ch >= '1' && ch <= '9') g[i] = ch.charCodeAt(0) - 48;
+    else throw new Error(`${what} has "${ch}" at position ${i}; use 1-9, and 0 or . for empty`);
+  }
+  return g;
+}
+/* Marks every cell whose digit repeats in its row, column or box. Returns how many. */
+function markConflicts(g, out) {
+  out.fill(0);
+  const seen = new Uint8Array(10);
+  for (const u of UNITS) {
+    seen.fill(0);
+    for (const c of u) if (g[c]) seen[g[c]]++;
+    for (const c of u) if (g[c] && seen[g[c]] > 1) out[c] = 1;
+  }
+  let n = 0;
+  for (let i = 0; i < 81; i++) n += out[i];
+  return n;
+}
+const SCRATCH = new Uint8Array(81);
+function isSolved(g) {
+  for (let i = 0; i < 81; i++) if (!g[i]) return false;
+  return markConflicts(g, SCRATCH) === 0;
+}
+
+/* =====================================================================
+   Trace compiler: JSON trace -> typed arrays the viewer can seek through.
+   It also checks the trace (givens untouched, final grid valid, ...).
+   ===================================================================== */
+function compileTrace(raw, file) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('the file is not a JSON object');
+  if (Array.isArray(raw.traces)) throw new Error('this is an index file; open the trace files it lists instead');
+  const warnings = [];
+  if (raw.format !== FORMAT) warnings.push(raw.format ? `"format" is "${raw.format}"; this page reads "${FORMAT}".` : `No "format" field; this page reads "${FORMAT}".`);
+  const method = String(raw.method ?? '').toLowerCase();
+  if (!METHODS[method]) warnings.push(`Unknown "method" ${JSON.stringify(raw.method)}; expected "sa", "ga" or "dfs".`);
+  const pz = raw.puzzle && typeof raw.puzzle === 'object' ? raw.puzzle : {};
+  const givens = parseGrid(pz.givens, 'puzzle.givens');
+  const start = raw.start != null ? parseGrid(raw.start, 'start') : givens.slice();
+  const events = raw.events;
+  if (!Array.isArray(events)) throw new Error('"events" is missing or is not a list');
+  const n = events.length;
+
+  const step = new Float64Array(n);
+  const loss = new Float32Array(n), T = new Float32Array(n), avg = new Float32Array(n), time = new Float32Array(n);
+  const depth = new Int16Array(n);
+  const cAcc = new Int32Array(n), cRej = new Int32Array(n), cWorse = new Int32Array(n);
+  const cRestart = new Int32Array(n), cReheat = new Int32Array(n), cBack = new Int32Array(n);
+  const opsStart = new Int32Array(n + 1), propStart = new Int32Array(n + 1);
+  const opsCell = [], opsDigit = [], propCell = [];
+  const restartIdx = [];
+  const has = { loss: false, T: false, avg: false, time: false, depth: method === 'dfs' };
+
+  const g = start.slice();
+  let givenHits = 0, firstGivenHit = null;
+  for (let c = 0; c < 81; c++) if (givens[c] && start[c] !== givens[c]) { givenHits++; firstGivenHit ??= 'the start grid'; }
+  let filled = 0;
+  for (let c = 0; c < 81; c++) if (!givens[c] && g[c]) filled++;
+  const ck = [g.slice()];
+
+  const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : NaN);
+  let L = NaN, TT = NaN, A = NaN, TM = NaN, prevStep = -Infinity;
+  let acc = 0, rej = 0, worse = 0, rs = 0, rh = 0, bt = 0;
+  let warnedStep = false, warnedOrder = false, zeroBad = null, zeroChecks = 0;
+
+  for (let i = 0; i < n; i++) {
+    const e = events[i];
+    if (!e || typeof e !== 'object') throw new Error(`events[${i}] is not an object`);
+    let st = num(e.step);
+    if (Number.isNaN(st)) {
+      st = i;
+      if (!warnedStep) { warnings.push('Some events have no numeric "step"; the event number is used instead.'); warnedStep = true; }
+    }
+    if (st < prevStep && !warnedOrder) { warnings.push(`"step" goes backwards at events[${i}] (${prevStep} then ${st}).`); warnedOrder = true; }
+    prevStep = st;
+    step[i] = st;
+
+    opsStart[i] = opsCell.length;
+    propStart[i] = propCell.length;
+    const rejected = e.accepted === false;
+    if (e.grid != null) {
+      const ng = parseGrid(e.grid, `events[${i}].grid`);
+      for (let c = 0; c < 81; c++) if (ng[c] !== g[c]) { opsCell.push(c); opsDigit.push(ng[c]); }
+    }
+    if (e.set != null) {
+      if (!Array.isArray(e.set)) throw new Error(`events[${i}].set is not a list`);
+      for (const t of e.set) {
+        if (!Array.isArray(t) || t.length !== 3) throw new Error(`events[${i}].set must hold [row, col, digit] triples`);
+        const [r, c, d] = t;
+        if (![r, c, d].every(Number.isInteger) || r < 0 || r > 8 || c < 0 || c > 8 || d < 0 || d > 9) {
+          throw new Error(`events[${i}].set has [${t}]; rows and columns are 0-8 and digits 0-9`);
+        }
+        if (rejected) propCell.push(9 * r + c);
+        else { opsCell.push(9 * r + c); opsDigit.push(d); }
+      }
+    }
+    for (let k = opsStart[i]; k < opsCell.length; k++) {
+      const c = opsCell[k], d = opsDigit[k];
+      if (givens[c]) {
+        if (d !== givens[c]) { givenHits++; firstGivenHit ??= `step ${st}`; }
+      } else if (g[c] && !d) filled--;
+      else if (!g[c] && d) filled++;
+      g[c] = d;
+    }
+
+    const prevL = L;
+    if (!Number.isNaN(num(e.loss))) { L = e.loss; has.loss = true; }
+    if (!Number.isNaN(num(e.T))) { TT = e.T; has.T = true; }
+    if (!Number.isNaN(num(e.avg_loss))) { A = e.avg_loss; has.avg = true; }
+    if (!Number.isNaN(num(e.time))) { TM = e.time; has.time = true; }
+
+    if (Number.isInteger(e.skipped) && e.skipped > 0) rej += e.skipped;   // rejected moves the trace left out
+    if (e.restart) { rs++; restartIdx.push(i); }
+    if (e.reheat) rh++;
+    if (e.backtrack) bt++;
+    const isMove = !e.restart && (e.set != null || e.grid != null);
+    if (rejected) rej++;
+    else if (isMove) {
+      acc++;
+      const dl = Number.isFinite(e.delta) ? e.delta : L - prevL;
+      if (method === 'sa' && dl > 0) worse++;
+    }
+    if (L === 0 && zeroBad === null && zeroChecks < 2000) {
+      zeroChecks++;
+      if (!isSolved(g)) zeroBad = st;
+    }
+
+    loss[i] = L; T[i] = TT; avg[i] = A; time[i] = TM; depth[i] = filled;
+    cAcc[i] = acc; cRej[i] = rej; cWorse[i] = worse; cRestart[i] = rs; cReheat[i] = rh; cBack[i] = bt;
+    if ((i + 1) % CK === 0) ck.push(g.slice());
+  }
+  opsStart[n] = opsCell.length;
+  propStart[n] = propCell.length;
+
+  const result = raw.result && typeof raw.result === 'object' ? raw.result : {};
+  const finalConflicts = markConflicts(g, SCRATCH);
+  let finalEmpty = 0, empties = 0;
+  for (let c = 0; c < 81; c++) { if (!g[c]) finalEmpty++; if (!givens[c]) empties++; }
+  let resultGridDiff = null;
+  if (result.grid != null) {
+    try {
+      const rg = parseGrid(result.grid, 'result.grid');
+      resultGridDiff = 0;
+      for (let c = 0; c < 81; c++) if (rg[c] !== g[c]) resultGridDiff++;
+    } catch (err) { warnings.push(err.message); }
+  }
+  if (n === 0) warnings.push('The trace has no events.');
+
+  return {
+    file, method, meta: METHODS[method] || GENERIC,
+    label: typeof raw.label === 'string' ? raw.label : '',
+    synthetic: raw.synthetic === true,
+    puzzle: { id: pz.id != null ? String(pz.id) : `puzzle-${hashGrid(givens)}`, level: pz.level != null ? String(pz.level) : 'unrated', source: pz.source },
+    seed: raw.seed, settings: raw.settings && typeof raw.settings === 'object' ? raw.settings : {},
+    command: typeof raw.command === 'string' ? raw.command : '', result,
+    givens, start, n, step, series: { loss, T, avg, time, depth }, has,
+    cum: { acc: cAcc, rej: cRej, worse: cWorse, restarts: cRestart, reheats: cReheat, back: cBack },
+    opsStart, opsCell: Uint8Array.from(opsCell), opsDigit: Uint8Array.from(opsDigit),
+    propStart, propCell: Uint8Array.from(propCell),
+    restartIdx, ck, final: g, empties, warnings,
+    checks: {
+      givenHits, firstGivenHit, finalConflicts, finalEmpty,
+      finalValid: finalConflicts === 0 && finalEmpty === 0,
+      claimedSolved: typeof result.solved === 'boolean' ? result.solved : null,
+      resultGridDiff, zeroBad,
+    },
+  };
+}
+function hashGrid(g) {
+  let x = 2166136261;
+  for (let i = 0; i < 81; i++) { x ^= g[i]; x = Math.imul(x, 16777619); }
+  return (x >>> 0).toString(16).slice(0, 6);
+}
+
+/* =====================================================================
+   Theme colours for the canvas (read from the CSS tokens)
+   ===================================================================== */
+let THEME = null;
+function theme() {
+  if (!THEME) {
+    const cs = getComputedStyle(document.documentElement);
+    const v = (k) => cs.getPropertyValue(`--${k}`).trim();
+    THEME = {
+      grid: v('grid'), axis: v('axis'), axisLabel: v('axis-label'), text: v('text'), text2: v('text-2'),
+      surface: v('surface'), 'series-1': v('series-1'), 'series-2': v('series-2'),
+    };
+  }
+  return THEME;
+}
+const FONT = '11px system-ui, -apple-system, "Segoe UI", sans-serif';
+
+/* =====================================================================
+   Chart: a canvas line chart that draws only the part of the run played so far.
+   The whole run is bucketed into one column per pixel (min/max/first/last),
+   so drawing costs the same for 1,000 or 1,000,000 events.
+   ===================================================================== */
+class Chart {
+  constructor(panel, cfg) {
+    this.panel = panel;
+    this.trace = panel.trace;
+    this.cfg = cfg;
+    const tr = this.trace;
+    this.series = cfg.series.filter((s) => tr.has[s.key]).map((s) => ({ ...s, data: tr.series[s.key] }));
+    this.hover = null;
+    this.focused = false;
+    this.unit = tr.meta.unit;
+
+    this.valueEls = [];
+    const cap = h('figcaption', null, h('span', { class: 'ct', text: cfg.title }));
+    if (this.series.length === 1) {
+      const v = h('span', { class: 'cv' });
+      this.valueEls.push(v);
+      cap.append(v);
+    } else {
+      const lg = h('span', { class: 'legend' });
+      for (const s of this.series) {
+        const v = h('span', { class: 'val' });
+        this.valueEls.push(v);
+        lg.append(h('span', { class: 'item' }, h('span', { class: 'lkey', style: `background:var(--${s.color})` }), s.label, ' ', v));
+      }
+      cap.append(lg);
+    }
+    this.canvas = h('canvas', { tabindex: '0', role: 'img', 'aria-label': `${cfg.title} chart for this run. Focus it to read the current values.` });
+    this.tip = h('div', { class: 'tip', hidden: true });
+    this.plot = h('div', { class: 'plot' }, this.canvas, this.tip);
+    this.el = h('figure', { class: 'chart' }, cap, this.plot);
+    this.ctx = this.canvas.getContext('2d');
+
+    // ranges over the WHOLE run, so the axes don't jump while it plays
+    this.x0 = tr.n ? tr.step[0] : 0;
+    this.x1 = tr.n ? tr.step[tr.n - 1] : 1;
+    if (!(this.x1 > this.x0)) this.x1 = this.x0 + 1;
+    let lo = 0, hi = -Infinity;
+    for (const s of this.series) for (let i = 0; i < tr.n; i++) {
+      const v = s.data[i];
+      if (Number.isFinite(v)) { if (v > hi) hi = v; if (v < lo) lo = v; }
+    }
+    if (cfg.series[0].key === 'depth') hi = Math.max(hi, tr.empties);
+    this.y0 = lo < 0 ? -niceMax(-lo) : 0;
+    this.y1 = niceMax(hi);
+
+    this.canvas.addEventListener('pointermove', (e) => this.onPointer(e));
+    this.canvas.addEventListener('pointerdown', (e) => this.onPointer(e));
+    this.canvas.addEventListener('pointerleave', () => { this.hover = null; this.panel.invalidate(); });
+    this.canvas.addEventListener('focus', () => { this.focused = true; this.panel.invalidate(); });
+    this.canvas.addEventListener('blur', () => { this.focused = false; this.panel.invalidate(); });
+    this.ro = new ResizeObserver(() => { this.layout(); this.panel.invalidate(); });
+    this.ro.observe(this.plot);
+  }
+  destroy() { this.ro.disconnect(); }
+
+  layout() {
+    const tr = this.trace;
+    const w = Math.max(60, Math.round(this.plot.clientWidth)), hgt = Math.max(60, Math.round(this.plot.clientHeight));
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = Math.round(w * dpr);
+    this.canvas.height = Math.round(hgt * dpr);
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.w = w; this.h = hgt;
+    this.yt = ticks(this.y0, this.y1, hgt < 160 ? 3 : 4);
+    this.ctx.font = FONT;
+    let lw = 0;
+    for (const v of this.yt) lw = Math.max(lw, this.ctx.measureText(fmtAxis(v)).width);
+    this.pad = { l: Math.ceil(lw) + 10, r: this.series.length > 1 ? 58 : 14, t: 10, b: 22 };
+    this.pw = Math.max(10, w - this.pad.l - this.pad.r);
+    this.ph = Math.max(10, hgt - this.pad.t - this.pad.b);
+    this.xt = ticks(this.x0, this.x1, Math.max(2, Math.floor(this.pw / 90)));
+
+    const W = Math.max(1, Math.floor(this.pw));
+    this.W = W;
+    const n = tr.n, st = tr.step, span = this.x1 - this.x0;
+    this.evCol = new Int32Array(n);
+    this.colFirst = new Int32Array(W).fill(-1);
+    for (let i = 0; i < n; i++) {
+      const c = clamp(Math.floor(((st[i] - this.x0) / span) * W), 0, W - 1);
+      this.evCol[i] = c;
+      if (this.colFirst[c] < 0) this.colFirst[c] = i;
+    }
+    for (const s of this.series) {
+      const f = new Float32Array(W).fill(NaN), mn = new Float32Array(W).fill(NaN), mx = new Float32Array(W).fill(NaN), la = new Float32Array(W).fill(NaN);
+      for (let i = 0; i < n; i++) {
+        const v = s.data[i];
+        if (!Number.isFinite(v)) continue;
+        const c = this.evCol[i];
+        if (Number.isNaN(f[c])) { f[c] = v; mn[c] = v; mx[c] = v; }
+        else { if (v < mn[c]) mn[c] = v; if (v > mx[c]) mx[c] = v; }
+        la[c] = v;
+      }
+      s.env = { f, mn, mx, la };
+    }
+  }
+  xOfStep(stp) { return this.pad.l + ((stp - this.x0) / (this.x1 - this.x0)) * this.pw; }
+  yOf(v) { return this.pad.t + this.ph - ((v - this.y0) / (this.y1 - this.y0)) * this.ph; }
+  xOfCol(c) { return this.pad.l + c + 0.5; }
+
+  /* index of the played event whose step is nearest to `stp` */
+  nearest(stp, last) {
+    const st = this.trace.step;
+    let lo = 0, hi = last;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (st[mid] <= stp) lo = mid; else hi = mid - 1; }
+    if (lo < last && Math.abs(st[lo + 1] - stp) < Math.abs(st[lo] - stp)) lo++;
+    return lo;
+  }
+  onPointer(e) {
+    const r = this.canvas.getBoundingClientRect();
+    const px = e.clientX - r.left;
+    this.hover = this.x0 + ((px - this.pad.l) / this.pw) * (this.x1 - this.x0);
+    this.panel.invalidate();
+  }
+
+  draw(s) {
+    if (!this.W) this.layout();
+    const ctx = this.ctx, th = theme(), tr = this.trace, { l, t } = this.pad, pw = this.pw, ph = this.ph;
+    ctx.clearRect(0, 0, this.w, this.h);
+    ctx.font = FONT;
+    ctx.lineWidth = 1;
+    // y gridlines + labels
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (const v of this.yt) {
+      const y = Math.round(this.yOf(v)) + 0.5;
+      ctx.strokeStyle = v === 0 ? th.axis : th.grid;
+      ctx.beginPath(); ctx.moveTo(l, y); ctx.lineTo(l + pw, y); ctx.stroke();
+      ctx.fillStyle = th.axisLabel;
+      ctx.fillText(fmtAxis(v), l - 6, y);
+    }
+    // x labels
+    ctx.textBaseline = 'top';
+    for (const v of this.xt) {
+      const x = this.xOfStep(v);
+      ctx.textAlign = x < l + 12 ? 'left' : x > l + pw - 12 ? 'right' : 'center';
+      ctx.fillStyle = th.axisLabel;
+      ctx.fillText(fmtAxis(v), x, t + ph + 6);
+    }
+    const last = s - 1;
+    // restart markers (solid hairlines)
+    if (this.cfg.markers && tr.restartIdx.length) {
+      const label = tr.restartIdx.length <= 6;
+      const lw = ctx.measureText('restart').width;
+      ctx.textBaseline = 'top';
+      for (const idx of tr.restartIdx) {
+        if (idx > last) break;
+        const x = Math.round(this.xOfCol(this.evCol[idx])) + 0.5;
+        ctx.strokeStyle = th.axisLabel;
+        ctx.beginPath(); ctx.moveTo(x, t); ctx.lineTo(x, t + ph); ctx.stroke();
+        if (label) {
+          // left of the line: before a restart the run has usually cooled, so that corner is empty
+          const left = x - 4 - lw >= l;
+          ctx.textAlign = left ? 'right' : 'left';
+          ctx.fillStyle = th.axisLabel;
+          ctx.fillText('restart', left ? x - 4 : x + 4, t);
+        }
+      }
+    }
+    // values shown in the caption
+    this.series.forEach((sr, k) => {
+      const txt = last >= 0 ? fmtNum(sr.data[last]) : '—';
+      if (this.valueEls[k].textContent !== txt) this.valueEls[k].textContent = txt;
+    });
+    if (last < 0) { this.tip.hidden = true; return; }
+
+    // the curves, up to the current event
+    const cur = this.evCol[last];
+    for (const sr of this.series) {
+      const { f, mn, mx, la } = sr.env;
+      ctx.strokeStyle = th[sr.color];
+      ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.beginPath();
+      let started = false;
+      const pt = (x, v) => { const y = this.yOf(v); if (started) ctx.lineTo(x, y); else { ctx.moveTo(x, y); started = true; } };
+      for (let c = 0; c < cur; c++) {
+        if (Number.isNaN(f[c])) continue;
+        const x = this.xOfCol(c);
+        pt(x, f[c]);
+        if (mn[c] !== mx[c]) { pt(x, mn[c]); pt(x, mx[c]); }
+        pt(x, la[c]);
+      }
+      // the current column: only the events played so far
+      let cf = NaN, cmn = Infinity, cmx = -Infinity, cl = NaN;
+      for (let i = Math.max(0, this.colFirst[cur]); i <= last; i++) {
+        if (this.evCol[i] !== cur) continue;
+        const v = sr.data[i];
+        if (!Number.isFinite(v)) continue;
+        if (Number.isNaN(cf)) cf = v;
+        if (v < cmn) cmn = v;
+        if (v > cmx) cmx = v;
+        cl = v;
+      }
+      if (!Number.isNaN(cf)) {
+        const x = this.xOfCol(cur);
+        pt(x, cf);
+        if (cmn !== cmx) { pt(x, cmn); pt(x, cmx); }
+        pt(x, cl);
+      }
+      ctx.stroke();
+    }
+    // end dots (2px surface ring) + direct labels when there are 2+ series
+    const ends = [];
+    for (const sr of this.series) {
+      const v = sr.data[last];
+      if (!Number.isFinite(v)) continue;
+      const x = this.xOfCol(cur), y = this.yOf(v);
+      ctx.fillStyle = th.surface; ctx.beginPath(); ctx.arc(x, y, 6, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = th[sr.color]; ctx.beginPath(); ctx.arc(x, y, 4, 0, 2 * Math.PI); ctx.fill();
+      ends.push({ x, y, label: sr.label });
+    }
+    if (ends.length > 1) {
+      const collide = ends.some((a, i) => ends.some((b, j) => j > i && Math.abs(a.y - b.y) < 13));
+      if (!collide) {
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = th.text2;
+        for (const e of ends) ctx.fillText(e.label, e.x + 9, e.y);
+      }
+    }
+
+    // crosshair + tooltip (pointer hover, or keyboard focus = current event)
+    let hi = null;
+    if (this.hover != null) hi = this.nearest(this.hover, last);
+    else if (this.focused) hi = last;
+    if (hi == null) { this.tip.hidden = true; return; }
+    const hx = Math.round(this.xOfStep(tr.step[hi])) + 0.5;
+    ctx.strokeStyle = th.text2; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(hx, t); ctx.lineTo(hx, t + ph); ctx.stroke();
+    const rows = [];
+    for (const sr of this.series) {
+      const v = sr.data[hi];
+      if (Number.isFinite(v)) {
+        const y = this.yOf(v);
+        ctx.fillStyle = th.surface; ctx.beginPath(); ctx.arc(hx, y, 6, 0, 2 * Math.PI); ctx.fill();
+        ctx.fillStyle = th[sr.color]; ctx.beginPath(); ctx.arc(hx, y, 4, 0, 2 * Math.PI); ctx.fill();
+      }
+      rows.push(h('div', { class: 'row' },
+        h('span', { class: 'lkey', style: `background:var(--${sr.color})` }),
+        h('strong', { text: fmtNum(v) }), h('span', { class: 'l', text: sr.label })));
+    }
+    this.tip.replaceChildren(h('div', { class: 'th', text: `${this.unit} ${fmtInt(tr.step[hi])}` }), ...rows);
+    this.tip.hidden = false;
+    const tw = this.tip.offsetWidth;
+    this.tip.style.left = `${hx + 12 + tw > this.w ? Math.max(0, hx - 12 - tw) : hx + 12}px`;
+  }
+}
+
+/* =====================================================================
+   Panel: one trace (grid + stats + charts + checks)
+   ===================================================================== */
+const STATS = {
+  sa: [
+    ['Step', (t, i) => (i < 0 ? '0' : fmtInt(t.step[i]))],
+    ['Loss', (t, i) => (i < 0 ? '—' : fmtNum(t.series.loss[i]))],
+    ['Temperature', (t, i) => (i < 0 ? '—' : fmtNum(t.series.T[i]))],
+    ['Worse moves accepted', (t, i) => fmtInt(i < 0 ? 0 : t.cum.worse[i])],
+    ['Rejected moves', (t, i) => fmtInt(i < 0 ? 0 : t.cum.rej[i])],
+    ['Restarts', (t, i) => {
+      const r = i < 0 ? 0 : t.cum.restarts[i], rh = i < 0 ? 0 : t.cum.reheats[i];
+      return rh ? `${fmtInt(r)} · ${fmtInt(rh)} reheats` : fmtInt(r);
+    }],
+    ['Time', (t, i) => timeAt(t, i)],
+  ],
+  ga: [
+    ['Generation', (t, i) => (i < 0 ? '0' : fmtInt(t.step[i]))],
+    ['Best loss', (t, i) => (i < 0 ? '—' : fmtNum(t.series.loss[i]))],
+    ['Average loss', (t, i) => (i < 0 ? '—' : fmtNum(t.series.avg[i]))],
+    ['Time', (t, i) => timeAt(t, i)],
+  ],
+  dfs: [
+    ['Nodes', (t, i) => (i < 0 ? '0' : fmtInt(t.step[i]))],
+    ['Cells filled', (t, i) => `${i < 0 ? 0 : t.series.depth[i]} / ${t.empties}`],
+    ['Backtracks', (t, i) => fmtInt(i < 0 ? 0 : t.cum.back[i])],
+    ['Time', (t, i) => timeAt(t, i)],
+  ],
+  generic: [
+    ['Step', (t, i) => (i < 0 ? '0' : fmtInt(t.step[i]))],
+    ['Loss', (t, i) => (i < 0 ? '—' : fmtNum(t.series.loss[i]))],
+    ['Time', (t, i) => timeAt(t, i)],
+  ],
+};
+function timeAt(t, i) {
+  if (i < 0) return '—';
+  if (t.has.time) return fmtTime(t.series.time[i]);
+  if (i === t.n - 1 && Number.isFinite(t.result.time)) return fmtTime(t.result.time);
+  return '—';
+}
+
+class Panel {
+  constructor(app, method, runs, entry) {
+    this.app = app;
+    this.method = method;
+    this.runs = runs;
+    this.entry = entry;
+    this.meta = METHODS[method] || GENERIC;
+    this.trace = null;
+    this.s = 0;
+    this.drawn = -1;
+    this.dirty = true;
+    this.charts = [];
+
+    this.status = h('span', { class: 'status neutral', text: 'Loading…' });
+    this.label = h('p');
+    const head = h('header', { class: 'panel-head' },
+      h('span', { class: 'chip', text: this.meta.short }),
+      h('div', { class: 'ph-text' }, h('h2', { text: this.meta.name }), this.label));
+    if (runs.length > 1) {
+      const sel = h('select', { 'aria-label': `${this.meta.name} run`, onchange: () => app.chooseRun(method, sel.value) });
+      for (const r of runs) sel.append(h('option', { value: r.key, text: runLabel(r) }));
+      sel.value = entry.key;
+      head.append(sel);
+    }
+    head.append(this.status);
+    this.label.textContent = runLabel(entry);
+    this.body = h('div', { class: 'panel-body' }, h('p', { class: 'loading', text: 'Loading trace…' }));
+    this.el = h('article', { class: 'panel', 'aria-label': this.meta.name }, head, this.body);
+  }
+  get n() { return this.trace ? this.trace.n : 0; }
+
+  async load() {
+    try {
+      this.trace = await getTrace(this.entry);
+      this.build();
+    } catch (err) {
+      this.trace = null;
+      this.status.className = 'status critical';
+      this.status.textContent = '✗ Not loaded';
+      this.body.replaceChildren(h('div', { class: 'msg error' }, h('strong', { text: "Couldn't read this trace. " }), err.message));
+    }
+  }
+
+  build() {
+    const tr = this.trace;
+    this.label.textContent = [tr.label || this.entry.label, tr.seed != null ? `seed ${tr.seed}` : null, tr.puzzle.id].filter(Boolean).join(' · ');
+    const top = [];
+    if (tr.synthetic) {
+      top.push(h('div', { class: 'banner' }, h('strong', { text: 'Synthetic test trace. ' }),
+        'Scripted from the known answer by tools/make_sample_traces.py to exercise this page. It is not a solver run: don\'t report its numbers.'));
+    }
+    const warns = [...tr.warnings];
+    if (this.entry.method && METHODS[this.entry.method] && tr.method !== this.entry.method) {
+      warns.push(`The index lists this file as "${this.entry.method}" but the trace says "${tr.method}".`);
+    }
+    if (warns.length) top.push(h('div', { class: 'warnings' }, h('strong', { text: 'Trace problems' }), h('ul', null, warns.map((w) => h('li', { text: w })))));
+    this.el.querySelectorAll('.banner, .warnings').forEach((x) => x.remove());
+    this.body.before(...top);
+
+    // grid
+    this.cells = new Array(81);
+    this.conf = new Uint8Array(81);
+    this.hl = new Uint8Array(81);
+    this.grid = tr.start.slice();
+    const sudoku = h('div', { class: 'sudoku', role: 'img', 'aria-label': 'Sudoku grid' });
+    for (let b = 0; b < 9; b++) {
+      const box = h('div', { class: 'box' });
+      const br = 3 * Math.floor(b / 3), bc = 3 * (b % 3);
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+        const c = 9 * (br + i) + bc + j;
+        const cell = h('div', { class: 'cell' });
+        cell._t = null; cell._c = null;
+        this.cells[c] = cell;
+        box.append(cell);
+      }
+      sudoku.append(box);
+    }
+    this.confCount = h('span', { class: 'count', text: '0' });
+    const legend = h('ul', { class: 'grid-legend' },
+      h('li', null, h('span', { class: 'sw given' }), 'Given'),
+      h('li', null, h('span', { class: 'sw solver' }), 'Solver’s digit'),
+      h('li', null, h('span', { class: 'sw conflict' }), 'In conflict: ', this.confCount),
+      h('li', null, h('span', { class: 'sw changed' }), tr.method === 'ga' ? 'Changed this generation' : 'Just changed'),
+      tr.method === 'sa' ? h('li', null, h('span', { class: 'sw proposed' }), 'Proposed, rejected') : null,
+      tr.method === 'dfs' ? h('li', null, h('span', { class: 'sw undone' }), 'Undone (backtrack)') : null);
+    const left = h('div', { class: 'left' }, h('div', { class: 'grid-wrap' }, sudoku), legend);
+
+    // stats
+    const defs = STATS[tr.method] || STATS.generic;
+    this.statEls = defs.map(([k]) => h('div', { class: 'v', text: '—' }));
+    const stats = h('div', { class: 'stats' }, defs.map(([k], i) => h('div', { class: 'stat' }, h('div', { class: 'k', text: k, title: k }), this.statEls[i])));
+    this.statDefs = defs;
+
+    // charts
+    this.charts.forEach((c) => c.destroy());
+    this.charts = tr.meta.charts.map((cfg) => new Chart(this, cfg)).filter((c) => c.series.length);
+    const charts = h('div', { class: 'charts' }, this.charts.map((c) => c.el));
+    if (!this.charts.length) charts.append(h('p', { class: 'loading', text: 'No loss values in this trace to plot.' }));
+
+    // final check + settings
+    this.checkEl = h('div', { class: 'check', hidden: true });
+    const right = h('div', { class: 'right' }, stats, charts, this.checkEl, this.settingsBlock());
+    this.body.replaceChildren(left, right);
+    this.s = 0;
+    this.drawn = -1;
+    this.dirty = true;
+  }
+
+  settingsBlock() {
+    const tr = this.trace;
+    const dl = h('dl');
+    const add = (k, v) => { if (v == null || v === '') return; dl.append(h('dt', { text: k }), h('dd', { text: typeof v === 'object' ? JSON.stringify(v) : String(v) })); };
+    add('Seed', tr.seed);
+    for (const [k, v] of Object.entries(tr.settings)) add(k, v);
+    add('Puzzle', `${tr.puzzle.id} (${tr.puzzle.level})`);
+    add('Puzzle source', tr.puzzle.source);
+    add('Trace file', tr.file);
+    add('Events', fmtInt(tr.n));
+    if (tr.result && Object.keys(tr.result).length) {
+      const r = { ...tr.result };
+      delete r.grid;
+      add('Result', r);
+    }
+    const det = h('details', { class: 'settings' }, h('summary', { text: `Settings and seed${tr.seed != null ? ` (seed ${tr.seed})` : ''}` }), dl);
+    if (tr.command) {
+      const btn = h('button', { class: 'btn', type: 'button', text: 'Copy' });
+      btn.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(tr.command); btn.textContent = 'Copied'; }
+        catch { btn.textContent = 'Select and copy'; }
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      });
+      det.append(h('div', { class: 'flabel', style: 'margin-top:8px', text: 'Rerun this exact run with:' }), h('div', { class: 'cmd' }, h('code', { text: tr.command }), btn));
+    }
+    return det;
+  }
+
+  /* Move the grid to state s (= number of events applied). */
+  seek(target) {
+    const tr = this.trace;
+    if (!tr) return;
+    target = clamp(target, 0, tr.n);
+    if (target === this.s) return;
+    if (target < this.s || target - this.s > CK) {
+      const k = Math.floor(target / CK);
+      this.grid.set(tr.ck[k]);
+      this.s = k * CK;
+    }
+    const { opsStart, opsCell, opsDigit } = tr;
+    for (let i = this.s; i < target; i++) {
+      for (let k = opsStart[i]; k < opsStart[i + 1]; k++) this.grid[opsCell[k]] = opsDigit[k];
+    }
+    this.s = target;
+  }
+  invalidate() { this.dirty = true; this.app.requestRender(); }
+
+  render() {
+    const tr = this.trace;
+    if (!tr || (this.drawn === this.s && !this.dirty)) return;
+    this.drawn = this.s;
+    this.dirty = false;
+    const last = this.s - 1;
+
+    // grid
+    const g = this.grid, hl = this.hl;
+    const nConf = markConflicts(g, this.conf);
+    hl.fill(0);
+    if (last >= 0) {
+      for (let k = tr.opsStart[last]; k < tr.opsStart[last + 1]; k++) hl[tr.opsCell[k]] = tr.opsDigit[k] === 0 ? 3 : 1;
+      for (let k = tr.propStart[last]; k < tr.propStart[last + 1]; k++) hl[tr.propCell[k]] = 2;
+    }
+    for (let i = 0; i < 81; i++) {
+      const el = this.cells[i], d = g[i];
+      const txt = d ? String(d) : '';
+      if (el._t !== txt) { el.textContent = txt; el._t = txt; }
+      let cls = 'cell';
+      if (tr.givens[i]) cls += ' given';
+      if (this.conf[i]) cls += ' conflict';
+      if (hl[i] === 1) cls += ' changed';
+      else if (hl[i] === 2) cls += ' proposed';
+      else if (hl[i] === 3) cls += ' undone';
+      if (el._c !== cls) { el.className = cls; el._c = cls; }
+    }
+    const cc = String(nConf);
+    if (this.confCount.textContent !== cc) this.confCount.textContent = cc;
+
+    // stats
+    this.statDefs.forEach(([, fn], k) => {
+      const txt = fn(tr, last);
+      if (this.statEls[k].textContent !== txt) this.statEls[k].textContent = txt;
+    });
+
+    // charts
+    for (const c of this.charts) c.draw(this.s);
+
+    // status + final check
+    const done = this.s >= tr.n;
+    let cls, txt;
+    const ck = tr.checks;
+    if (!done) {
+      cls = 'neutral';
+      txt = `● Replaying · ${Math.floor((100 * this.s) / Math.max(1, tr.n))}%`;
+    } else if (ck.finalValid && ck.givenHits === 0) {
+      cls = 'good';
+      txt = `✓ Solved at ${tr.meta.unit.toLowerCase()} ${fmtInt(tr.n ? tr.step[tr.n - 1] : 0)}`;
+    } else {
+      cls = 'critical';
+      const fl = tr.n ? tr.series.loss[tr.n - 1] : NaN;
+      txt = Number.isFinite(fl) ? `✗ Not solved · loss ${fmtNum(fl)}` : `✗ Not solved · ${ck.finalConflicts} in conflict, ${ck.finalEmpty} empty`;
+    }
+    const scls = `status ${cls}`;
+    if (this.status.className !== scls) this.status.className = scls;
+    if (this.status.textContent !== txt) this.status.textContent = txt;
+    if (done !== !this.checkEl.hidden) {
+      this.checkEl.hidden = !done;
+      if (done) this.fillCheck();
+    }
+  }
+
+  fillCheck() {
+    const tr = this.trace, ck = tr.checks;
+    const items = [];
+    const item = (kind, text) => items.push(h('li', { class: kind }, h('span', { class: 'ic', 'aria-hidden': 'true', text: kind === 'good' ? '✓' : kind === 'critical' ? '✗' : '!' }), h('span', { text })));
+    const nGiven = 81 - tr.empties;
+    if (ck.givenHits === 0) item('good', `All ${nGiven} givens unchanged`);
+    else item('critical', `${ck.givenHits} ${ck.givenHits === 1 ? 'write' : 'writes'} changed a given (first at ${ck.firstGivenHit})`);
+    if (ck.finalValid) item('good', 'Final grid is a valid solution: no empty cell, no repeated digit');
+    else item('critical', `Final grid is not a solution: ${ck.finalConflicts} cells in conflict, ${ck.finalEmpty} empty`);
+    if (ck.claimedSolved === true && !ck.finalValid) item('warning', 'The trace’s result says solved, but the grid the events build is not.');
+    if (ck.claimedSolved === false && ck.finalValid) item('warning', 'The trace’s result says unsolved, but the grid is a valid solution.');
+    if (ck.resultGridDiff > 0) item('warning', `result.grid differs from the grid the events build in ${ck.resultGridDiff} cells.`);
+    if (ck.zeroBad != null) item('warning', `Loss was 0 at step ${fmtInt(ck.zeroBad)} while the grid was not a valid solution: the loss misses a rule.`);
+    this.checkEl.replaceChildren(h('h3', { text: 'Checked in the browser' }), h('ul', null, items));
+  }
+
+  destroy() { this.charts.forEach((c) => c.destroy()); }
+}
+
+function runLabel(e) {
+  return e.label || (e.seed != null ? `seed ${e.seed}` : e.fileName || (e.url ? e.url.split('/').pop() : e.key));
+}
+
+/* =====================================================================
+   Library: trace entries from traces/index.json, traces/synthetic/index.json
+   and files the user opens.
+   ===================================================================== */
+const library = [];
+let fileCounter = 0;
+
+function getTrace(entry) {
+  if (entry.trace) return Promise.resolve(entry.trace);
+  if (!entry.promise) {
+    entry.promise = fetch(entry.url, { cache: 'no-cache' })
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${entry.url}`); return r.json(); })
+      .then((raw) => { entry.trace = compileTrace(raw, entry.url.split('/').pop()); return entry.trace; })
+      .catch((err) => { entry.promise = null; throw err; });
+  }
+  return entry.promise;
+}
+
+async function loadIndex(url, synthetic) {
+  try {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) return { ok: false, status: res.status };
+    const j = await res.json();
+    const list = Array.isArray(j) ? j : j.traces;
+    if (!Array.isArray(list)) return { ok: false, error: new Error(`${url} has no "traces" list`) };
+    const base = new URL(url, location.href);
+    let count = 0;
+    for (const e of list) {
+      if (!e || typeof e.file !== 'string') continue;
+      library.push({
+        key: `${synthetic ? 'syn' : 'idx'}:${e.file}`,
+        url: new URL(e.file, base).href,
+        method: String(e.method || '').toLowerCase(),
+        level: e.level != null ? String(e.level) : 'unrated',
+        puzzle: e.puzzle != null ? String(e.puzzle) : e.file,
+        label: typeof e.label === 'string' ? e.label : '',
+        seed: e.seed,
+        synthetic: synthetic || e.synthetic === true,
+      });
+      count++;
+    }
+    return { ok: true, count };
+  } catch (err) {
+    return { ok: false, error: err };
+  }
+}
+
+/* =====================================================================
+   App: filters, panels, playback
+   ===================================================================== */
+const app = {
+  state: { level: null, puzzle: null, method: 'all', showSynthetic: false, runs: {} },
+  panels: [],
+  sig: '',
+  tick: 0,
+  maxN: 0,
+  playing: false,
+  speedIdx: 6,
+  due: 0,
+  lastTs: 0,
+  raf: 0,
+  renderQueued: false,
+  build: 0,
+
+  visible() { return library.filter((e) => this.state.showSynthetic || !e.synthetic); },
+
+  refresh() {
+    const st = this.state, vis = this.visible();
+    const levels = [...new Set(vis.map((e) => e.level))].sort((a, b) => {
+      const ia = LEVEL_ORDER.indexOf(a), ib = LEVEL_ORDER.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+    });
+    if (!levels.includes(st.level)) st.level = levels[0] ?? null;
+    const inLevel = vis.filter((e) => e.level === st.level);
+    const puzzles = [...new Set(inLevel.map((e) => e.puzzle))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    if (!puzzles.includes(st.puzzle)) st.puzzle = puzzles[0] ?? null;
+    const forPuzzle = inLevel.filter((e) => e.puzzle === st.puzzle);
+    const avail = METHOD_ORDER.filter((m) => forPuzzle.some((e) => e.method === m));
+    const others = [...new Set(forPuzzle.map((e) => e.method))].filter((m) => !METHOD_ORDER.includes(m));
+    const all = [...avail, ...others];
+    if (st.method !== 'all' && !all.includes(st.method)) st.method = all.length > 1 ? 'all' : all[0] ?? 'all';
+    if (st.method === 'all' && all.length === 1) st.method = all[0];
+
+    // level buttons
+    const levelSeg = $('levelSeg');
+    levelSeg.replaceChildren(...(levels.length ? levels : ['easy', 'medium', 'hard']).map((lv) => h('button', {
+      type: 'button', 'aria-pressed': String(lv === st.level), disabled: !levels.length,
+      text: lv.charAt(0).toUpperCase() + lv.slice(1),
+      onclick: () => { st.level = lv; st.puzzle = null; this.refresh(); },
+    })));
+    // puzzle select
+    const ps = $('puzzleSel');
+    ps.replaceChildren(...puzzles.map((p) => {
+      const nRuns = inLevel.filter((e) => e.puzzle === p).length;
+      return h('option', { value: p, text: `${p} (${nRuns} run${nRuns === 1 ? '' : 's'})` });
+    }));
+    ps.disabled = !puzzles.length;
+    if (st.puzzle) ps.value = st.puzzle;
+    // method buttons
+    const mSeg = $('methodSeg');
+    const mBtn = (m, text, ok) => h('button', {
+      type: 'button', 'aria-pressed': String(st.method === m), disabled: !ok, text,
+      title: ok ? null : 'No trace for this method on this puzzle',
+      onclick: () => { st.method = m; this.refresh(); },
+    });
+    mSeg.replaceChildren(
+      ...METHOD_ORDER.map((m) => mBtn(m, METHODS[m].short, all.includes(m))),
+      ...others.map((m) => mBtn(m, m || '?', true)),
+      mBtn('all', 'All', all.length > 1));
+    $('synthChk').checked = st.showSynthetic;
+
+    // panels
+    const want = st.method === 'all' ? all : all.includes(st.method) ? [st.method] : [];
+    const specs = want.map((m) => {
+      const runs = forPuzzle.filter((e) => e.method === m);
+      const entry = runs.find((e) => e.key === st.runs[m]) || runs[0];
+      return { m, runs, entry };
+    });
+    const sig = specs.map((s) => s.entry.key).join('|');
+    this.writeHash();
+    if (sig === this.sig && this.panels.length) return;
+    this.sig = sig;
+    this.rebuild(specs);
+  },
+
+  async rebuild(specs) {
+    const id = ++this.build;
+    this.pause();
+    this.panels.forEach((p) => p.destroy());
+    const box = $('panels');
+    box.className = `panels ${specs.length > 1 ? 'multi' : 'single'}`;
+    if (!specs.length) {
+      this.panels = [];
+      box.replaceChildren(h('div', { class: 'empty' },
+        h('p', null, h('strong', { text: 'No traces to show.' })),
+        h('p', { text: 'Open trace files, drop them on this page, or tick “Synthetic test traces” to try the viewer.' })));
+      this.setMax(0);
+      return;
+    }
+    this.panels = specs.map((s) => new Panel(this, s.m, s.runs, s.entry));
+    box.replaceChildren(...this.panels.map((p) => p.el));
+    await Promise.all(this.panels.map((p) => p.load()));
+    if (id !== this.build) return;
+    this.setMax(Math.max(0, ...this.panels.map((p) => p.n)));
+    this.autoSpeed();
+    this.setTick(0);
+  },
+
+  chooseRun(method, key) { this.state.runs[method] = key; this.refresh(); },
+
+  setMax(n) {
+    this.maxN = n;
+    const sc = $('scrub');
+    sc.max = String(n);
+    sc.disabled = n === 0;
+    ['resetBtn', 'backBtn', 'playBtn', 'stepBtn', 'endBtn'].forEach((b) => { $(b).disabled = n === 0; });
+    this.tick = Math.min(this.tick, n);
+    this.updatePos();
+  },
+  autoSpeed() {
+    // aim for a replay of about 12 seconds
+    const target = this.maxN / 12;
+    let k = SPEEDS.findIndex((v) => v >= target);
+    if (k < 0) k = SPEEDS.length - 1;
+    this.setSpeed(Math.max(2, k));
+  },
+  setSpeed(k) {
+    this.speedIdx = clamp(k, 0, SPEEDS.length - 1);
+    $('speed').value = String(this.speedIdx);
+    $('speedOut').textContent = fmtSpeed(SPEEDS[this.speedIdx]);
+  },
+  setTick(t) {
+    this.tick = clamp(Math.round(t), 0, this.maxN);
+    for (const p of this.panels) p.seek(Math.min(this.tick, p.n));
+    this.updatePos();
+    this.requestRender();
+  },
+  updatePos() {
+    $('scrub').value = String(this.tick);
+    $('pos').textContent = `event ${fmtInt(this.tick)} / ${fmtInt(this.maxN)}`;
+  },
+  requestRender() {
+    if (this.renderQueued) return;
+    this.renderQueued = true;
+    requestAnimationFrame(() => { this.renderQueued = false; for (const p of this.panels) p.render(); });
+  },
+
+  play() {
+    if (!this.maxN) return;
+    if (this.tick >= this.maxN) this.setTick(0);
+    this.playing = true;
+    this.due = 0;
+    this.lastTs = performance.now();
+    this.setPlayUI();
+    if (!this.raf) this.raf = requestAnimationFrame((ts) => this.frame(ts));
+  },
+  pause() {
+    this.playing = false;
+    if (this.raf) { cancelAnimationFrame(this.raf); this.raf = 0; }
+    this.setPlayUI();
+  },
+  toggle() { if (this.playing) this.pause(); else this.play(); },
+  frame(ts) {
+    this.raf = 0;
+    if (!this.playing) return;
+    const dt = Math.min(0.1, Math.max(0, (ts - this.lastTs) / 1000));
+    this.lastTs = ts;
+    this.due += SPEEDS[this.speedIdx] * dt;
+    const k = Math.floor(this.due);
+    if (k > 0) { this.due -= k; this.setTick(this.tick + k); }
+    if (this.tick >= this.maxN) { this.pause(); return; }
+    this.raf = requestAnimationFrame((t) => this.frame(t));
+  },
+  setPlayUI() {
+    const atEnd = this.maxN > 0 && this.tick >= this.maxN;
+    $('playTxt').textContent = this.playing ? 'Pause' : atEnd ? 'Replay' : 'Play';
+    $('playIcon').setAttribute('d', this.playing
+      ? 'M7 5h3.5v14H7zM13.5 5H17v14h-3.5z'
+      : 'M8 5.6v12.8a.8.8 0 0 0 1.22.68l10.1-6.4a.8.8 0 0 0 0-1.36L9.22 4.92A.8.8 0 0 0 8 5.6z');
+  },
+  step(d) { this.pause(); this.setTick(this.tick + d); this.setPlayUI(); },
+
+  readHash() {
+    const p = new URLSearchParams(location.hash.slice(1));
+    const st = this.state;
+    if (p.get('level')) st.level = p.get('level');
+    if (p.get('puzzle')) st.puzzle = p.get('puzzle');
+    if (p.get('method')) st.method = p.get('method');
+    return p.has('synth') ? p.get('synth') === '1' : null;
+  },
+  writeHash() {
+    const st = this.state, p = new URLSearchParams();
+    if (st.level) p.set('level', st.level);
+    if (st.puzzle) p.set('puzzle', st.puzzle);
+    if (st.method) p.set('method', st.method);
+    p.set('synth', st.showSynthetic ? '1' : '0');
+    try { history.replaceState(null, '', `#${p}`); } catch { /* some file:// setups refuse */ }
+  },
+};
+
+function showNotice(kind, ...parts) {
+  const n = $('notice');
+  if (!parts.length) { n.hidden = true; return; }
+  n.className = `notice ${kind || ''}`;
+  n.replaceChildren(...parts);
+  n.hidden = false;
+}
+
+async function openFiles(files) {
+  const added = [], errors = [];
+  for (const f of files) {
+    try {
+      const raw = JSON.parse(await f.text());
+      const tr = compileTrace(raw, f.name);
+      const entry = {
+        key: `file:${++fileCounter}:${f.name}`, trace: tr, method: tr.method, level: tr.puzzle.level,
+        puzzle: tr.puzzle.id, label: tr.label || f.name, seed: tr.seed, synthetic: tr.synthetic, fileName: f.name,
+      };
+      library.push(entry);
+      added.push(entry);
+    } catch (err) {
+      errors.push(`${f.name}: ${err.message}`);
+    }
+  }
+  if (errors.length) showNotice('error', h('p', null, h('strong', { text: `Couldn't open ${errors.length} file${errors.length > 1 ? 's' : ''}.` })), h('ul', null, errors.map((e) => h('li', { text: e }))));
+  else showNotice();
+  if (!added.length) return;
+  const st = app.state, first = added[0];
+  st.level = first.level;
+  st.puzzle = first.puzzle;
+  const same = added.filter((e) => e.puzzle === first.puzzle && e.level === first.level);
+  for (const e of same) st.runs[e.method] = e.key;
+  const methods = new Set(same.map((e) => e.method));
+  st.method = methods.size > 1 ? 'all' : first.method;
+  if (added.some((e) => e.synthetic)) st.showSynthetic = true;
+  app.sig = '';
+  app.refresh();
+}
+
+/* =====================================================================
+   Wiring
+   ===================================================================== */
+$('playBtn').addEventListener('click', () => app.toggle());
+$('stepBtn').addEventListener('click', () => app.step(1));
+$('backBtn').addEventListener('click', () => app.step(-1));
+$('resetBtn').addEventListener('click', () => { app.pause(); app.setTick(0); app.setPlayUI(); });
+$('endBtn').addEventListener('click', () => { app.pause(); app.setTick(app.maxN); app.setPlayUI(); });
+$('speed').addEventListener('input', (e) => app.setSpeed(Number(e.target.value)));
+$('scrub').addEventListener('input', (e) => { app.setTick(Number(e.target.value)); app.setPlayUI(); });
+$('puzzleSel').addEventListener('change', (e) => { app.state.puzzle = e.target.value; app.refresh(); });
+$('synthChk').addEventListener('change', (e) => { app.state.showSynthetic = e.target.checked; app.refresh(); });
+$('openBtn').addEventListener('click', () => $('fileIn').click());
+$('fileIn').addEventListener('change', (e) => { openFiles([...e.target.files]); e.target.value = ''; });
+
+document.addEventListener('keydown', (e) => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const tag = e.target.tagName;
+  if (tag === 'SELECT' || tag === 'TEXTAREA' || (tag === 'INPUT' && e.target.type !== 'checkbox')) return;
+  if (e.key === ' ' || e.key === 'k') {
+    if (tag === 'BUTTON' || tag === 'SUMMARY') return;
+    e.preventDefault(); app.toggle();
+  } else if (e.key === 'ArrowRight') { e.preventDefault(); app.step(1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); app.step(-1); }
+  else if (e.key === 'Home') { e.preventDefault(); app.pause(); app.setTick(0); app.setPlayUI(); }
+  else if (e.key === 'End') { e.preventDefault(); app.pause(); app.setTick(app.maxN); app.setPlayUI(); }
+});
+
+let dragDepth = 0;
+document.addEventListener('dragenter', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { dragDepth++; $('drop').hidden = false; } });
+document.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) $('drop').hidden = true; });
+document.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault(); });
+document.addEventListener('drop', (e) => {
+  dragDepth = 0; $('drop').hidden = true;
+  if (!e.dataTransfer?.files?.length) return;
+  e.preventDefault();
+  openFiles([...e.dataTransfer.files]);
+});
+
+const darkMq = matchMedia('(prefers-color-scheme: dark)');
+const retheme = () => { THEME = null; app.panels.forEach((p) => { p.dirty = true; }); app.requestRender(); };
+darkMq.addEventListener?.('change', retheme);
+new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+(async function init() {
+  app.setSpeed(app.speedIdx);
+  app.setPlayUI();
+  const synthFromHash = app.readHash();
+  const [real, syn] = await Promise.all([
+    loadIndex('traces/index.json', false),
+    loadIndex('traces/synthetic/index.json', true),
+  ]);
+  const realCount = real.ok ? real.count : 0;
+  app.state.showSynthetic = synthFromHash ?? realCount === 0;
+  if (location.protocol === 'file:' && !real.ok && !syn.ok) {
+    showNotice('warn',
+      h('p', null, h('strong', { text: 'Opened straight from disk, so the browser won’t let this page read traces/ by itself.' })),
+      h('p', null, 'Either use ', h('b', { text: 'Open trace files…' }), ' (or drop the .json files here), or serve the folder: run ',
+        h('code', { text: 'python3 -m http.server' }), ' in the repository folder and open ', h('code', { text: 'http://localhost:8000/demo.html' }), '.'));
+  } else if (!real.ok && !library.length) {
+    showNotice('warn', h('p', { text: 'No traces found: traces/index.json and traces/synthetic/index.json could not be read.' }),
+      h('p', { text: 'Open trace files instead, or see traces/README.md for how the solvers should write them.' }));
+  } else if (!realCount && app.state.showSynthetic) {
+    showNotice('', h('p', null, 'No real runs yet (', h('code', { text: 'traces/index.json' }),
+      ' is missing or empty), so the synthetic test traces are shown. They are scripted fakes for checking this page; see ',
+      h('code', { text: 'traces/README.md' }), ' for how the solvers should write real ones.'));
+  }
+  app.refresh();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+# The solvers, tests and experiments use only the Python standard library (Python 3.9+).
+# matplotlib is only needed for the figures that experiments.py draws.
+matplotlib>=3.9
